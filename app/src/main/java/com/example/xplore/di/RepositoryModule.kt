@@ -1,8 +1,10 @@
 package com.example.xplore.di
 
-import com.example.xplore.model.api.DirectionService
+import com.example.xplore.model.api.GoogleService
 import com.example.xplore.model.repository.abstraction.DirectionRepository
+import com.example.xplore.model.repository.abstraction.GeocodeRepository
 import com.example.xplore.model.repository.implementation.DirectionRepositoryImpl
+import com.example.xplore.model.repository.implementation.GeocodeRepositoryImpl
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -15,9 +17,17 @@ object RepositoryModule {
 
     @Singleton
     @Provides
-    fun provideDirectionRepository(directionService: DirectionService): DirectionRepository {
+    fun provideDirectionRepository(googleService: GoogleService): DirectionRepository {
         return DirectionRepositoryImpl(
-            directionService
+            googleService
+        )
+    }
+
+    @Singleton
+    @Provides
+    fun provideGeocodenRepository(googleService: GoogleService): GeocodeRepository {
+        return GeocodeRepositoryImpl(
+            googleService
         )
     }
 

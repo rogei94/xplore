@@ -21,10 +21,4 @@ object LocationModule {
         return LocationServices.getFusedLocationProviderClient(app)
     }
 
-    @Singleton
-    @Provides
-    fun providePlacesClient(app: XploreApplication): PlacesClient {
-        return Places.createClient(app)
-    }
-
 }

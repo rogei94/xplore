@@ -1,7 +1,10 @@
 package com.example.xplore.ui.map
 
+import android.annotation.SuppressLint
 import android.graphics.Color
+import android.location.Location
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -10,16 +13,17 @@ import androidx.fragment.app.activityViewModels
 import com.example.xplore.databinding.FragmentMapsBinding
 import com.example.xplore.model.data.RouteInfo
 import com.example.xplore.ui.MainViewModel
+import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapsInitializer
 import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.gms.maps.model.Polyline
-import com.google.android.gms.maps.model.PolylineOptions
+import com.google.android.gms.maps.model.*
 import com.google.android.libraries.places.api.model.AutocompletePrediction
+import com.google.maps.model.PlacesSearchResult
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import kotlin.math.ceil
 
 @AndroidEntryPoint
 class MapsFragment : Fragment(), OnMapReadyCallback {
@@ -27,7 +31,11 @@ class MapsFragment : Fragment(), OnMapReadyCallback {
     private lateinit var binding: FragmentMapsBinding
     private val mainViewModel by activityViewModels<MainViewModel>()
 
+    @Inject
+    lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+
     private lateinit var mMap: GoogleMap
+    private lateinit var placeList: List<PlacesSearchResult>
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -41,6 +49,14 @@ class MapsFragment : Fragment(), OnMapReadyCallback {
     private fun subscribeObservers() {
         mainViewModel.routeInfo.observe(viewLifecycleOwner, { routeInfo ->
             drawRoute(routeInfo)
+        })
+        mainViewModel.placeInfo.observe(viewLifecycleOwner, { placeInfo ->
+            placeInfo.latLngPlace?.let { latLng ->
+                drawMarker(latLng, placeInfo.namePlace)
+            }
+        })
+        mainViewModel.placesList.observe(viewLifecycleOwner, {
+            placeList = it.results.toList()
         })
     }
 
@@ -68,6 +84,7 @@ class MapsFragment : Fragment(), OnMapReadyCallback {
             MarkerOptions()
                 .position(position)
                 .title(placeName)
+
         )
     }
 
@@ -84,11 +101,43 @@ class MapsFragment : Fragment(), OnMapReadyCallback {
 
     override fun onMapReady(googleMap: GoogleMap?) {
         mMap = googleMap ?: return
-        val place = arguments?.getParcelable<AutocompletePrediction>("place")
-        place?.let {
-            mainViewModel.getGoogleDirection(place)
-        }
+        val place = arguments?.get("place") as PlacesSearchResult?
         subscribeObservers()
+        if (place != null) {
+            mainViewModel.getGoogleDirection(place)
+        } else {
+            getCurrentLocation()
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun getCurrentLocation() {
+        fusedLocationProviderClient.lastLocation
+            .addOnSuccessListener { location ->
+                drawCircle(location)
+                drawPlacesMarkers()
+            }.addOnFailureListener {
+                Log.e("Xplore", "Error: ${it.message}")
+            }
+    }
+
+    private fun drawPlacesMarkers() {
+        placeList.forEach { place ->
+            drawMarker(LatLng(place.geometry.location.lat, place.geometry.location.lng), place.name)
+        }
+    }
+
+    private fun drawCircle(location: Location) {
+        val currentLocation = LatLng(location.latitude, location.longitude)
+        val nearBy = if (mainViewModel.nearBy != "0") mainViewModel.nearBy.toDouble() else 5.0
+        mMap.addCircle(
+            CircleOptions()
+                .center(currentLocation)
+                .radius(ceil(nearBy * 1609.344))
+                .strokeColor(Color.RED)
+        )
+        drawMarker(currentLocation, "Current Location")
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 14f))
     }
 
 }

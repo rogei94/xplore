@@ -1,7 +1,7 @@
 package com.example.xplore.di
 
 import com.example.xplore.BuildConfig
-import com.example.xplore.model.api.DirectionService
+import com.example.xplore.model.api.GoogleService
 import com.example.xplore.util.BASE_URL
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -54,8 +54,8 @@ object NetworkModule {
 
     @Singleton
     @Provides
-    fun provideDirectionService(retrofit: Retrofit): DirectionService {
-        return retrofit.create(DirectionService::class.java)
+    fun provideDirectionService(retrofit: Retrofit): GoogleService {
+        return retrofit.create(GoogleService::class.java)
     }
 
 }

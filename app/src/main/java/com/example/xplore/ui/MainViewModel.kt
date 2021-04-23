@@ -7,8 +7,11 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.xplore.BuildConfig.MAPS_API_KEY
+import com.example.xplore.model.data.PlaceInfo
 import com.example.xplore.model.data.RouteInfo
 import com.example.xplore.model.repository.abstraction.DirectionRepository
+import com.example.xplore.model.repository.abstraction.GeocodeRepository
 import com.example.xplore.util.DataStatus
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -18,9 +21,13 @@ import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.FetchPlaceResponse
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.android.libraries.places.api.net.PlacesClient
+import com.google.maps.GeoApiContext
+import com.google.maps.PlacesApi
+import com.google.maps.model.PlaceType
+import com.google.maps.model.PlacesSearchResponse
+import com.google.maps.model.PlacesSearchResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
-import java.util.*
 import javax.inject.Inject
 import kotlin.math.cos
 
@@ -30,13 +37,13 @@ typealias OnLocation = (location: LatLng) -> Unit
 class MainViewModel
 @Inject
 constructor(
-    private val placesClient: PlacesClient,
     private val fusedLocationProviderClient: FusedLocationProviderClient,
-    private val directionRepository: DirectionRepository
+    private val directionRepository: DirectionRepository,
+    private val geocodeRepository: GeocodeRepository
 ) : ViewModel() {
 
-    private val _placesList = MutableLiveData<List<AutocompletePrediction>>()
-    val placesList: LiveData<List<AutocompletePrediction>>
+    private val _placesList = MutableLiveData<PlacesSearchResponse>()
+    val placesList: LiveData<PlacesSearchResponse>
         get() = _placesList
 
     private val _errorPlaces = MutableLiveData<String>()
@@ -48,9 +55,12 @@ constructor(
     private val _routeInfo = MutableLiveData<RouteInfo>()
     val routeInfo: LiveData<RouteInfo> get() = _routeInfo
 
+    private val _placeInfo = MutableLiveData<PlaceInfo>()
+    val placeInfo: LiveData<PlaceInfo> get() = _placeInfo
+
     var place = ""
     var zipCode = ""
-    var nearBy = ""
+    var nearBy = "0"
 
     fun clearStatus() {
         _dataStatus.value = DataStatus.DEFAULT
@@ -62,58 +72,45 @@ constructor(
                 searchPlaces(it)
             }
         } else {
-            Log.e("XPLORE", "Campo vacio")
+            Log.e("XPLORE", "You need to enter schools, restaurants, etc")
         }
     }
 
     private fun searchPlaces(location: LatLng) {
+        val distanceInMeters = if (nearBy != "0") nearBy.toInt() * 1609.344 else 5.0 * 1609.344
 
-        val bounds = if (nearBy != "") getRectBoundsByRadius(location, nearBy.toInt())
-        else getRectBoundsByRadius(location, 200)
-
-        val request = FindAutocompletePredictionsRequest.builder()
-            .setLocationBias(bounds)
-            .setOrigin(location)
-            .setCountries("US")
-            .setTypeFilter(TypeFilter.ESTABLISHMENT)
-            .setQuery(place)
-            .build()
-        placesClient.findAutocompletePredictions(request)
-            .addOnSuccessListener { response ->
-                _placesList.value = response.autocompletePredictions
-                _dataStatus.value = DataStatus.SUCCESS
-            }.addOnFailureListener { exception ->
-                _errorPlaces.value = exception.message
-            }
+        val geoApiContext = GeoApiContext.Builder().apiKey(MAPS_API_KEY).build()
+        try {
+            val places = PlacesApi.nearbySearchQuery(
+                geoApiContext, com.google.maps.model.LatLng(location.latitude, location.longitude)
+            ).keyword(place)
+                .radius(distanceInMeters.toInt())
+                .await()
+            _placesList.value = places
+            _dataStatus.value = DataStatus.SUCCESS
+        } catch (e: Exception) {
+            _errorPlaces.value = e.message
+        }
     }
 
     private fun validateFields(): Boolean {
-        return place != "" || zipCode != "" || nearBy != ""
+        return place != ""
     }
 
-    fun getGoogleDirection(place: AutocompletePrediction) {
+    fun getGoogleDirection(place: PlacesSearchResult) {
         requestLocation {
-            val placeFields = listOf(Place.Field.LAT_LNG)
-            val request = FetchPlaceRequest.newInstance(place.placeId, placeFields)
-
-            placesClient.fetchPlace(request)
-                .addOnSuccessListener { response: FetchPlaceResponse ->
-                    viewModelScope.launch {
-                        val direction = directionRepository.getGoogleDirections(
-                            "${it.latitude},${it.longitude}",
-                            "${response.place.latLng?.latitude},${response.place.latLng?.longitude}"
-                        )
-                        val polyline = direction.routes[0].overviewPolyline.points
-                        polyline?.let {
-                            val polylineLatLng = polylineToLatLng(it)
-                            _routeInfo.value = RouteInfo(polylineLatLng, place.getPrimaryText(null).toString())
-                        }
-                    }
-                }.addOnFailureListener { exception: Exception ->
-                    if (exception is ApiException) {
-                        Log.e(TAG, "Place not found: ${exception.message}")
-                    }
+            viewModelScope.launch {
+                val direction = directionRepository.getGoogleDirections(
+                    "${it.latitude},${it.longitude}",
+                    "${place.geometry.location.lat},${place.geometry.location.lng}"
+                )
+                val polyline = direction.routes[0].overviewPolyline.points
+                polyline?.let {
+                    val polylineLatLng = polylineToLatLng(it)
+                    _routeInfo.value =
+                        RouteInfo(polylineLatLng, place.name)
                 }
+            }
         }
     }
 
@@ -160,19 +157,6 @@ constructor(
             }.addOnFailureListener {
                 Log.e("Xplore", "Error: ${it.message}")
             }
-    }
-
-    private fun getRectBoundsByRadius(location: LatLng, mDistanceInMeters: Int): LocationBias {
-        val latRadian = Math.toRadians(location.latitude)
-        val degLatKm = 110.574235
-        val degLongKm = 110.572833 * cos(latRadian)
-        val deltaLat = mDistanceInMeters / 1000.0 / degLatKm
-        val deltaLong = mDistanceInMeters / 1000.0 / degLongKm
-        val minLat: Double = location.latitude - deltaLat
-        val minLong: Double = location.longitude - deltaLong
-        val maxLat: Double = location.latitude + deltaLat
-        val maxLong: Double = location.longitude + deltaLong
-        return RectangularBounds.newInstance(LatLng(minLat, minLong), LatLng(maxLat, maxLong))
     }
 
 }

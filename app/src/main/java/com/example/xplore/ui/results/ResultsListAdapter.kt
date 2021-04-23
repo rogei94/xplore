@@ -9,24 +9,25 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.xplore.databinding.LayoutResultItemBinding
 import com.google.android.libraries.places.api.model.AutocompletePrediction
+import com.google.maps.model.PlacesSearchResult
 
 class ResultsListAdapter(
     private val mInteractor: ResultsListAdapterInteractor
-) : ListAdapter<AutocompletePrediction, ResultsListAdapter.ResultsViewHolder>(ResultsDiff()) {
+) : ListAdapter<PlacesSearchResult, ResultsListAdapter.ResultsViewHolder>(ResultsDiff()) {
 
 
     interface ResultsListAdapterInteractor {
-        fun onShowRouteClicked(autocompletePrediction: AutocompletePrediction)
+        fun onShowRouteClicked(placesSearchResult: PlacesSearchResult)
     }
 
     inner class ResultsViewHolder(
         private val itemBinding: LayoutResultItemBinding
     ) : RecyclerView.ViewHolder(itemBinding.root) {
 
-        fun bind(autocompletePrediction: AutocompletePrediction) {
-            itemBinding.textPlaceTitle.text = autocompletePrediction.getPrimaryText(null).toString()
+        fun bind(placesSearchResult: PlacesSearchResult) {
+            itemBinding.textPlaceTitle.text = placesSearchResult.name
             itemBinding.root.setOnClickListener {
-                mInteractor.onShowRouteClicked(autocompletePrediction)
+                mInteractor.onShowRouteClicked(placesSearchResult)
             }
         }
     }
@@ -46,17 +47,17 @@ class ResultsListAdapter(
     }
 }
 
-class ResultsDiff : DiffUtil.ItemCallback<AutocompletePrediction>() {
+class ResultsDiff : DiffUtil.ItemCallback<PlacesSearchResult>() {
     override fun areItemsTheSame(
-        oldItem: AutocompletePrediction,
-        newItem: AutocompletePrediction
+        oldItem: PlacesSearchResult,
+        newItem: PlacesSearchResult
     ): Boolean {
         return oldItem.placeId == newItem.placeId
     }
 
     override fun areContentsTheSame(
-        oldItem: AutocompletePrediction,
-        newItem: AutocompletePrediction
+        oldItem: PlacesSearchResult,
+        newItem: PlacesSearchResult
     ): Boolean {
         return oldItem.toString() == newItem.toString()
     }

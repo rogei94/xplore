@@ -33,7 +33,9 @@
                 android:id="@+id/search_edit"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@={searchViewModel.place}"/>
+                android:lines="1"
+                android:maxLines="1"
+                android:text="@={searchViewModel.place}" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -52,7 +54,9 @@
                 android:id="@+id/zipCodeEdit"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@={searchViewModel.zipCode}"/>
+                android:lines="1"
+                android:maxLines="1"
+                android:text="@={searchViewModel.zipCode}" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -82,7 +86,9 @@
                 android:id="@+id/nearByEdit"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@={searchViewModel.nearBy}"/>
+                android:lines="1"
+                android:maxLines="1"
+                android:text="@={searchViewModel.nearBy}" />
 
         </com.google.android.material.textfield.TextInputLayout>
 

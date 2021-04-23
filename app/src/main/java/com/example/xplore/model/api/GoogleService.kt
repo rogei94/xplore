@@ -1,15 +1,23 @@
 package com.example.xplore.model.api
 
 import com.example.xplore.model.data.Direction
+import com.example.xplore.model.data.GeocodeResponse
 import retrofit2.http.GET
 import retrofit2.http.Query
 
-interface DirectionService {
+interface GoogleService {
 
-    @GET("json?")
+    @GET("directions/json?")
     suspend fun getGoogleDirections(
         @Query("origin") originAddress: String,
         @Query("destination") destinationAddress: String,
         @Query("key") apiKey: String
     ): Direction
+
+    @GET("geocode/json?")
+    suspend fun getZipcodeLatLng(
+        @Query("address") zipcode: String
+    ) : GeocodeResponse
+
+    //@GET("")
 }

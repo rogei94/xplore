@@ -13,6 +13,7 @@ import com.example.xplore.R
 import com.example.xplore.databinding.FragmentResultsBinding
 import com.example.xplore.ui.MainViewModel
 import com.google.android.libraries.places.api.model.AutocompletePrediction
+import com.google.maps.model.PlacesSearchResult
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -35,22 +36,22 @@ class ResultsFragment : Fragment(), ResultsListAdapter.ResultsListAdapterInterac
         mainViewModel.clearStatus()
         mainViewModel.placesList.observe(viewLifecycleOwner, { list ->
             list?.let {
-                initRecyclerView(it)
+                initRecyclerView(it.results.toList())
             }
         })
     }
 
-    private fun initRecyclerView(listAutocompletePrediction: List<AutocompletePrediction>) {
+    private fun initRecyclerView(listPlacesSearchResult: List<PlacesSearchResult>) {
         binding.recyclerViewPlaces.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = resultsListAdapter
         }
-        resultsListAdapter.submitList(listAutocompletePrediction)
+        resultsListAdapter.submitList(listPlacesSearchResult)
     }
 
 
-    override fun onShowRouteClicked(autocompletePrediction: AutocompletePrediction) {
-        val place = bundleOf("place" to autocompletePrediction)
+    override fun onShowRouteClicked(placesSearchResult: PlacesSearchResult) {
+        val place = bundleOf("place" to placesSearchResult)
         view?.findNavController()?.navigate(R.id.mapFragment, place)
     }
 
