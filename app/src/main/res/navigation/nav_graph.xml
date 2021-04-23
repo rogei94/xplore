@@ -24,7 +24,8 @@
         tools:layout="@layout/fragment_results">
 
         <action
-            android:id="@+id/action_results_to_map"/>
+            android:id="@+id/action_results_to_map"
+            app:destination="@id/mapFragment"/>
 
     </fragment>
 

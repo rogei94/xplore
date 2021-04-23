@@ -11,29 +11,35 @@ import androidx.navigation.findNavController
 import com.example.xplore.R
 import com.example.xplore.databinding.FragmentSearchBinding
 import com.example.xplore.ui.MainViewModel
-import com.example.xplore.util.DataState
+import com.example.xplore.util.DataStatus
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class SearchFragment : Fragment() {
 
     private lateinit var binding: FragmentSearchBinding
-    private val searchViewModel by activityViewModels<MainViewModel>()
+    private val mainViewModel by activityViewModels<MainViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        searchViewModel.placesList.observe(this, { dataState ->
-            when (dataState) {
-                is DataState.Loading -> {
-                    Toast.makeText(context, "Getting places...", Toast.LENGTH_SHORT).show()
-                }
-                is DataState.Success -> {
+        subscribeObservers()
+    }
+
+    private fun subscribeObservers() {
+        mainViewModel.dataStatus.observe(this, { status ->
+            when (status) {
+                DataStatus.SUCCESS -> {
                     view?.findNavController()?.navigate(R.id.resultsFragment)
                 }
-                is DataState.Error -> {
-                    Toast.makeText(context, "There is an error...", Toast.LENGTH_SHORT).show()
+                DataStatus.LOADING -> {
+                    Toast.makeText(context, "Getting places...", Toast.LENGTH_SHORT).show()
+                }
+                else -> {
                 }
             }
+        })
+        mainViewModel.errorPlaces.observe(this, {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
         })
     }
 
@@ -42,7 +48,7 @@ class SearchFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         binding = FragmentSearchBinding.inflate(inflater, container, false)
-        binding.searchViewModel = searchViewModel
+        binding.searchViewModel = mainViewModel
         return binding.root
     }
 

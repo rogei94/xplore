@@ -5,13 +5,13 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.os.bundleOf
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.xplore.R
 import com.example.xplore.databinding.FragmentResultsBinding
 import com.example.xplore.ui.MainViewModel
-import com.example.xplore.util.DataState
 import com.google.android.libraries.places.api.model.AutocompletePrediction
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -19,7 +19,7 @@ import dagger.hilt.android.AndroidEntryPoint
 class ResultsFragment : Fragment(), ResultsListAdapter.ResultsListAdapterInteractor {
 
     private lateinit var binding: FragmentResultsBinding
-    private val searchViewModel by activityViewModels<MainViewModel>()
+    private val mainViewModel by activityViewModels<MainViewModel>()
     private val resultsListAdapter = ResultsListAdapter(this)
 
     override fun onCreateView(
@@ -32,11 +32,10 @@ class ResultsFragment : Fragment(), ResultsListAdapter.ResultsListAdapterInterac
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        searchViewModel.placesList.observe(viewLifecycleOwner, { dataState ->
-            when (dataState) {
-                is DataState.Success -> {
-                    initRecyclerView(dataState.response)
-                }
+        mainViewModel.clearStatus()
+        mainViewModel.placesList.observe(viewLifecycleOwner, { list ->
+            list?.let {
+                initRecyclerView(it)
             }
         })
     }
@@ -50,8 +49,9 @@ class ResultsFragment : Fragment(), ResultsListAdapter.ResultsListAdapterInterac
     }
 
 
-    override fun onShowRouteClicked() {
-        view?.findNavController()?.navigate(R.id.mapFragment)
+    override fun onShowRouteClicked(autocompletePrediction: AutocompletePrediction) {
+        val place = bundleOf("place" to autocompletePrediction)
+        view?.findNavController()?.navigate(R.id.mapFragment, place)
     }
 
 }

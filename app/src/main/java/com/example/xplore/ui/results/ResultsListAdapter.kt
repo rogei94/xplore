@@ -16,7 +16,7 @@ class ResultsListAdapter(
 
 
     interface ResultsListAdapterInteractor {
-        fun onShowRouteClicked()
+        fun onShowRouteClicked(autocompletePrediction: AutocompletePrediction)
     }
 
     inner class ResultsViewHolder(
@@ -26,7 +26,7 @@ class ResultsListAdapter(
         fun bind(autocompletePrediction: AutocompletePrediction) {
             itemBinding.textPlaceTitle.text = autocompletePrediction.getPrimaryText(null).toString()
             itemBinding.root.setOnClickListener {
-                mInteractor.onShowRouteClicked()
+                mInteractor.onShowRouteClicked(autocompletePrediction)
             }
         }
     }
