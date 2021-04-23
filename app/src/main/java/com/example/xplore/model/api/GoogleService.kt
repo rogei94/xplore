@@ -16,7 +16,8 @@ interface GoogleService {
 
     @GET("geocode/json?")
     suspend fun getZipcodeLatLng(
-        @Query("address") zipcode: String
+        @Query("address") zipcode: String,
+        @Query("key") apiKey: String
     ) : GeocodeResponse
 
     //@GET("")

@@ -19,7 +19,6 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapsInitializer
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.*
-import com.google.android.libraries.places.api.model.AutocompletePrediction
 import com.google.maps.model.PlacesSearchResult
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -101,20 +100,33 @@ class MapsFragment : Fragment(), OnMapReadyCallback {
 
     override fun onMapReady(googleMap: GoogleMap?) {
         mMap = googleMap ?: return
+        mMap.clear()
         val place = arguments?.get("place") as PlacesSearchResult?
         subscribeObservers()
         if (place != null) {
-            mainViewModel.getGoogleDirection(place)
+            mainViewModel.validateZipcode(place)
         } else {
-            getCurrentLocation()
+            if (mainViewModel.zipCode != "") {
+                subscribeZipCodeObserver()
+                mainViewModel.getLocationFromZipCode()
+            } else {
+                getCurrentLocation()
+            }
         }
+    }
+
+    private fun subscribeZipCodeObserver() {
+        mainViewModel.latLngZipcode.observe(viewLifecycleOwner, {
+            drawCircle(it)
+            drawPlacesMarkers()
+        })
     }
 
     @SuppressLint("MissingPermission")
     private fun getCurrentLocation() {
         fusedLocationProviderClient.lastLocation
             .addOnSuccessListener { location ->
-                drawCircle(location)
+                drawCircle(LatLng(location.latitude, location.longitude))
                 drawPlacesMarkers()
             }.addOnFailureListener {
                 Log.e("Xplore", "Error: ${it.message}")
@@ -127,7 +139,7 @@ class MapsFragment : Fragment(), OnMapReadyCallback {
         }
     }
 
-    private fun drawCircle(location: Location) {
+    private fun drawCircle(location: LatLng) {
         val currentLocation = LatLng(location.latitude, location.longitude)
         val nearBy = if (mainViewModel.nearBy != "0") mainViewModel.nearBy.toDouble() else 5.0
         mMap.addCircle(

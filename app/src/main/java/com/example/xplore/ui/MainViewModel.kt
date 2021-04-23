@@ -58,6 +58,9 @@ constructor(
     private val _placeInfo = MutableLiveData<PlaceInfo>()
     val placeInfo: LiveData<PlaceInfo> get() = _placeInfo
 
+    private val _latLngZipcode = MutableLiveData<LatLng>()
+    val latLngZipcode: LiveData<LatLng> get() = _latLngZipcode
+
     var place = ""
     var zipCode = ""
     var nearBy = "0"
@@ -68,8 +71,20 @@ constructor(
 
     fun onSearchButtonClicked() {
         if (validateFields()) {
-            requestLocation {
-                searchPlaces(it)
+            if (zipCode != "") {
+                viewModelScope.launch {
+                    val zipCodeLatLng = geocodeRepository.getZipcodeLatLng(zipCode)
+                    searchPlaces(
+                        LatLng(
+                            zipCodeLatLng.results.first().geometry.zipLocation.zipLat,
+                            zipCodeLatLng.results.first().geometry.zipLocation.zipLng
+                        )
+                    )
+                }
+            } else {
+                requestLocation {
+                    searchPlaces(it)
+                }
             }
         } else {
             Log.e("XPLORE", "You need to enter schools, restaurants, etc")
@@ -97,22 +112,56 @@ constructor(
         return place != ""
     }
 
-    fun getGoogleDirection(place: PlacesSearchResult) {
-        requestLocation {
+    fun validateZipcode(place: PlacesSearchResult) {
+        if (zipCode != "") {
             viewModelScope.launch {
-                val direction = directionRepository.getGoogleDirections(
-                    "${it.latitude},${it.longitude}",
-                    "${place.geometry.location.lat},${place.geometry.location.lng}"
+                val zipCodeLatLng = getLatLngFromZipcode()
+                getGoogleDirection(
+                    "${zipCodeLatLng.latitude},${zipCodeLatLng.longitude}",
+                    "${place.geometry.location.lat},${place.geometry.location.lng}",
+                    place.name
                 )
-                val polyline = direction.routes[0].overviewPolyline.points
-                polyline?.let {
-                    val polylineLatLng = polylineToLatLng(it)
-                    _routeInfo.value =
-                        RouteInfo(polylineLatLng, place.name)
+            }
+        } else {
+            requestLocation {
+                viewModelScope.launch {
+                    getGoogleDirection(
+                        "${it.latitude},${it.longitude}",
+                        "${place.geometry.location.lat},${place.geometry.location.lng}",
+                        place.name
+                    )
                 }
             }
         }
     }
+
+    private suspend fun getLatLngFromZipcode(): LatLng {
+        val zipCodeLatLng = geocodeRepository.getZipcodeLatLng(zipCode)
+        return LatLng(
+            zipCodeLatLng.results.first().geometry.zipLocation.zipLat,
+            zipCodeLatLng.results.first().geometry.zipLocation.zipLng
+        )
+    }
+
+    fun getLocationFromZipCode() {
+        viewModelScope.launch {
+            _latLngZipcode.value = getLatLngFromZipcode()
+        }
+    }
+
+    private suspend fun getGoogleDirection(origin: String, destination: String, placeName: String) {
+        val direction = directionRepository.getGoogleDirections(
+            origin,
+            destination
+        )
+        val polyline = direction.routes[0].overviewPolyline.points
+        polyline?.let {
+            val polylineLatLng = polylineToLatLng(it)
+            _routeInfo.value =
+                RouteInfo(polylineLatLng, placeName)
+        }
+    }
+
 
     private fun polylineToLatLng(poly: String): List<LatLng> {
         val len = poly.length

@@ -1,5 +1,6 @@
 package com.example.xplore.model.repository.implementation
 
+import com.example.xplore.BuildConfig.MAPS_API_KEY
 import com.example.xplore.model.api.GoogleService
 import com.example.xplore.model.data.GeocodeResponse
 import com.example.xplore.model.repository.abstraction.GeocodeRepository
@@ -12,7 +13,7 @@ constructor(
 ) : GeocodeRepository {
 
     override suspend fun getZipcodeLatLng(address: String): GeocodeResponse {
-        return googleService.getZipcodeLatLng(address)
+        return googleService.getZipcodeLatLng(address, MAPS_API_KEY)
     }
 
 }
