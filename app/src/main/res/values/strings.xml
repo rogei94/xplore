@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Xplore</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="zipcode_p">Zipcode:</string>
+    <string name="or_upper">OR</string>
+    <string name="near_by_miles">Near by (Miles):</string>
+    <string name="xplore">Xplore</string>
+    <string name="looking_for_p">Looking for:</string>
+    <string name="search">Search</string>
+    <string name="map">Map</string>
+    <string name="results">Results</string>
+</resources>

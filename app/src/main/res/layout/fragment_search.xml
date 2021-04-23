@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <variable
+            name="searchViewModel"
+            type="com.example.xplore.ui.MainViewModel" />
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".ui.search.SearchFragment">
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/searchLayout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:hint="@string/looking_for_p"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.22000003">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/search_edit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@={searchViewModel.place}"/>
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/zipCodeLayout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="@string/zipcode_p"
+            app:layout_constraintEnd_toEndOf="@id/searchLayout"
+            app:layout_constraintStart_toStartOf="@id/searchLayout"
+            app:layout_constraintTop_toBottomOf="@id/searchLayout">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/zipCodeEdit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@={searchViewModel.zipCode}"/>
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:id="@+id/textOR"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/or_upper"
+            android:textAlignment="center"
+            app:layout_constraintEnd_toEndOf="@id/zipCodeLayout"
+            app:layout_constraintStart_toStartOf="@id/zipCodeLayout"
+            app:layout_constraintTop_toBottomOf="@id/zipCodeLayout" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/nearByLayout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="@string/near_by_miles"
+            app:layout_constraintEnd_toEndOf="@id/textOR"
+            app:layout_constraintStart_toStartOf="@id/textOR"
+            app:layout_constraintTop_toBottomOf="@id/textOR">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/nearByEdit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@={searchViewModel.nearBy}"/>
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <Button
+            android:id="@+id/search_button_xplore"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:onClick="@{() -> searchViewModel.onSearchButtonClicked()}"
+            android:text="@string/xplore"
+            app:layout_constraintEnd_toEndOf="@id/nearByLayout"
+            app:layout_constraintStart_toStartOf="@id/nearByLayout"
+            app:layout_constraintTop_toBottomOf="@id/nearByLayout" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>
